@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "282628090864",
+    "firebase_url": "https://adhoc-aaffe.firebaseio.com",
+    "project_id": "adhoc-aaffe",
+    "storage_bucket": "adhoc-aaffe.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282628090864:android:6c1b88f334a940ca5e4b35",
+        "android_client_info": {
+          "package_name": "com.example.adhoc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "282628090864-cvog9at4rfee9mp2gce2tbjcskr0bqk6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.adhoc",
+            "certificate_hash": "047d27968ddba32eba22595e7d5f2e2c6ebcbf49"
+          }
+        },
+        {
+          "client_id": "282628090864-k96cie0lbh9pi3pimd96oplk1qmciple.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCha97xXa43hyvPyjkiStuCSgB5q-b_i50"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "282628090864-k96cie0lbh9pi3pimd96oplk1qmciple.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
