@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.adhoc.RegistrationActivity"
+    android:orientation="vertical">
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email"
+        android:id="@+id/email"/>
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Password"
+        android:id="@+id/password"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Registration Type ?"
+        android:textStyle="bold"
+        android:textSize="20dp"/>
+
+    <!-- add RadioGroup which contain the many RadioButton-->
+    <RadioGroup
+        android:id="@+id/groupradio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- In RadioGroup create the 1 Radio Button-->
+        <!-- like this we will add some more Radio Button-->
+        <RadioButton
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/radia_id1"
+            android:text="Customer"
+            android:textSize="15dp"/>
+
+        <RadioButton
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/radia_id2"
+            android:text="Driver"
+            android:textSize="15dp"/>
+
+    </RadioGroup>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Submit"
+        android:id="@+id/submit"/>
+</LinearLayout>
