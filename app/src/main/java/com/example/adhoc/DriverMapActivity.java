@@ -91,6 +91,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                 if(dataSnapshot.exists()){
                     customerId = dataSnapshot.child("customerId").getValue().toString();
                     rideId = dataSnapshot.child("rideId").getValue().toString();
+                    Toast.makeText(DriverMapActivity.this, "Found a customer!", Toast.LENGTH_SHORT);
                     getAssignedCustomerPickupLocation();
                 }
             }

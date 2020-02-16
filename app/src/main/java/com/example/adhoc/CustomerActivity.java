@@ -103,7 +103,7 @@ public class CustomerActivity extends AppCompatActivity {
     private Boolean driverFound = false;
     private String driverFoundID;
     public void getClosestDriver(){
-        if (radius>50){
+        if (radius>50 && !driverFound){
             toast("Driver not found!");
             mRequest.setText("Call Uber");
             radius = 1;
@@ -130,7 +130,7 @@ public class CustomerActivity extends AppCompatActivity {
                     driverRef.updateChildren(map);
                     radius = 1;
 
-                    mRequest.setText("Looking for Driver Location....");
+                    mRequest.setText("Found Driver!");
 
                 }
             }
