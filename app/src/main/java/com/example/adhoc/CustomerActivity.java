@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 public class CustomerActivity extends AppCompatActivity {
-    Button mLogout, mRequest;
+    Button mLogout, mRequest, mSettings;
     LatLng destination;
     String TAG = "CustomerActivity Debug";
     String rideId;
@@ -45,6 +45,7 @@ public class CustomerActivity extends AppCompatActivity {
 
         mLogout = findViewById(R.id.logout);
         mRequest = findViewById(R.id.request);
+        mSettings = findViewById(R.id.settings);
 
         mLogout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -90,6 +91,14 @@ public class CustomerActivity extends AppCompatActivity {
             }
         });
         handleSearchBar();
+        mSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(CustomerActivity.this, CustomerSettingsActivity.class);
+                startActivity(intent);
+                return;
+            }
+        });
     }
     public void toast(final String text) {
         Handler handler = new Handler(Looper.getMainLooper());
