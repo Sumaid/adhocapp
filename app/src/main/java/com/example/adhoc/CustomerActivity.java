@@ -2,6 +2,8 @@ package com.example.adhoc;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -11,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.libraries.places.api.Places;
@@ -26,11 +30,13 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class CustomerActivity extends AppCompatActivity {
     Button mLogout, mRequest;
     LatLng destination;
     String TAG = "CustomerActivity Debug";
+    String rideId;
     int size = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +78,7 @@ public class CustomerActivity extends AppCompatActivity {
                             }
                         });
                 GeoFire geofire = new GeoFire(ref);
+                rideId = userid+size;
                 geofire.setLocation(userid+size, new GeoLocation(destination.latitude, destination.longitude), new GeoFire.CompletionListener() {
                     @Override
                     public void onComplete(String key, DatabaseError error) {
@@ -79,19 +86,90 @@ public class CustomerActivity extends AppCompatActivity {
                     }
                 });
                 mRequest.setText("Getting your driver.....");
+                getClosestDriver();
             }
         });
+        handleSearchBar();
+    }
+    public void toast(final String text) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            public void run() {
+                Toast.makeText(CustomerActivity.this, text, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    private int radius = 1;
+    private Boolean driverFound = false;
+    private String driverFoundID;
+    public void getClosestDriver(){
+        if (radius>50){
+            toast("Driver not found!");
+            mRequest.setText("Call Uber");
+            radius = 1;
+            return;
+        }
+        DatabaseReference driverLocation = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
 
+        GeoFire geoFire = new GeoFire(driverLocation);
+        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(destination.latitude, destination.longitude), radius);
+        geoQuery.removeAllListeners();
+
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+                if (!driverFound){
+                    driverFound = true;
+                    driverFoundID = key;
+
+                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverFoundID).child("customerRideId");
+                    String customerId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    HashMap map = new HashMap();
+                    map.put("customerId", customerId);
+                    map.put("rideId", rideId);
+                    driverRef.updateChildren(map);
+                    radius = 1;
+
+                    mRequest.setText("Looking for Driver Location....");
+
+                }
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+                if (!driverFound)
+                {
+                    radius++;
+                    getClosestDriver();
+                }
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+
+            }
+        });
+    }
+
+    private void handleSearchBar(){
         Places.initialize(getApplicationContext(),"AIzaSyC1S7BUHYryWvinNdNtu1s7mn-d1IMgXP0");
         PlacesClient placesClient = Places.createClient(this);
 
         AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
                 getSupportFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
 
-        // Specify the types of place data to return.
         autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG));
 
-        // Set up a PlaceSelectionListener to handle the response.
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
