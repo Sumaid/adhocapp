@@ -19,9 +19,11 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Arrays;
 
@@ -29,7 +31,7 @@ public class CustomerActivity extends AppCompatActivity {
     Button mLogout, mRequest;
     LatLng destination;
     String TAG = "CustomerActivity Debug";
-
+    int size = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,14 +59,26 @@ public class CustomerActivity extends AppCompatActivity {
                     return;
                 }
                 String userid = FirebaseAuth.getInstance().getUid();
-                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("customerRequest");
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("customerRequest").child(userid);
+                ref.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                // get total available quest
+                                size = (int) dataSnapshot.getChildrenCount()+1;
+                            }
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
                 GeoFire geofire = new GeoFire(ref);
-                geofire.setLocation(userid, new GeoLocation(destination.latitude, destination.longitude), new GeoFire.CompletionListener() {
+                geofire.setLocation(userid+size, new GeoLocation(destination.latitude, destination.longitude), new GeoFire.CompletionListener() {
                     @Override
                     public void onComplete(String key, DatabaseError error) {
 
                     }
                 });
+                mRequest.setText("Getting your driver.....");
             }
         });
 
