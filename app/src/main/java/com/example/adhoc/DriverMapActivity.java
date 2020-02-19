@@ -12,8 +12,12 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -42,6 +46,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.List;
+import java.util.Map;
 
 public class DriverMapActivity extends FragmentActivity implements OnMapReadyCallback {
     GoogleMap mGoogleMap;
@@ -53,7 +58,12 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     Button mLogout;
     String customerId = "";
     String rideId = "";
+
+    private LinearLayout mCustomerInfo;
+    private TextView mCustomerName, mCustomerPhone;
+
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +74,11 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
+
+        mCustomerInfo = findViewById(R.id.customerInfo);
+        mCustomerName = findViewById(R.id.customerName);
+        mCustomerPhone = findViewById(R.id.customerPhone);
+
 
         mLogout = findViewById(R.id.logout);
         mLogout.setOnClickListener(new View.OnClickListener() {
@@ -93,6 +108,11 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                     rideId = dataSnapshot.child("rideId").getValue().toString();
                     Toast.makeText(DriverMapActivity.this, "Found a customer!", Toast.LENGTH_SHORT);
                     getAssignedCustomerPickupLocation();
+                    getAssignedCustomerInfo();
+                }else{
+                    mCustomerInfo.setVisibility(View.GONE);
+                    mCustomerName.setText("");
+                    mCustomerPhone.setText("");
                 }
             }
 
@@ -157,6 +177,30 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         }
     }
 
+    private void getAssignedCustomerInfo(){
+        mCustomerInfo.setVisibility(View.VISIBLE);
+
+        DatabaseReference mCustomerDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child("Customers").child(customerId);
+        mCustomerDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists() && dataSnapshot.getChildrenCount() > 0){
+                    Map<String, Object> map = (Map <String, Object>)dataSnapshot.getValue();
+                    if(map.get("name") != null ){
+                        mCustomerName.setText(map.get("name").toString());
+                    }
+                    if(map.get("phone") != null ){
+                        mCustomerPhone.setText(map.get("phone").toString());
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
