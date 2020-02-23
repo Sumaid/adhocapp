@@ -7,8 +7,11 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.firebase.geofire.GeoFire;
@@ -31,6 +34,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 public class CustomerActivity extends AppCompatActivity {
     Button mLogout, mRequest, mSettings;
@@ -38,10 +42,19 @@ public class CustomerActivity extends AppCompatActivity {
     String TAG = "CustomerActivity Debug";
     String rideId;
     int size = 0;
+
+    private LinearLayout mDriverInfo;
+    private TextView mDriverName, mDriverPhone, mDriverCar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_customer);
+
+        mDriverInfo = findViewById(R.id.driverInfo);
+        mDriverName = findViewById(R.id.driverName);
+        mDriverPhone = findViewById(R.id.driverPhone);
+        mDriverCar = findViewById(R.id.driverCar);
 
         mLogout = findViewById(R.id.logout);
         mRequest = findViewById(R.id.request);
@@ -83,7 +96,10 @@ public class CustomerActivity extends AppCompatActivity {
                 geofire.setLocation(userid+size, new GeoLocation(destination.latitude, destination.longitude), new GeoFire.CompletionListener() {
                     @Override
                     public void onComplete(String key, DatabaseError error) {
-
+                        mDriverInfo.setVisibility(View.GONE);
+                        mDriverName.setText("");
+                        mDriverPhone.setText("");
+                        mDriverCar.setText("");
                     }
                 });
                 mRequest.setText("Getting your driver.....");
@@ -139,6 +155,7 @@ public class CustomerActivity extends AppCompatActivity {
                     driverRef.updateChildren(map);
                     radius = 1;
 
+                    getDriverInfo();
                     mRequest.setText("Found Driver!");
 
                 }
@@ -165,6 +182,34 @@ public class CustomerActivity extends AppCompatActivity {
 
             @Override
             public void onGeoQueryError(DatabaseError error) {
+
+            }
+        });
+    }
+
+    private void getDriverInfo(){
+        mDriverInfo.setVisibility(View.VISIBLE);
+
+        DatabaseReference mDriversDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverFoundID);
+        mDriversDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists() && dataSnapshot.getChildrenCount() > 0){
+                    Map<String, Object> map = (Map <String, Object>)dataSnapshot.getValue();
+                    if(map.get("name") != null ){
+                        mDriverName.setText(map.get("name").toString());
+                    }
+                    if(map.get("phone") != null ){
+                        mDriverPhone.setText(map.get("phone").toString());
+                    }
+                    if(map.get("car") != null ){
+                        mDriverCar.setText(map.get("car").toString());
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
         });

@@ -61,9 +61,45 @@
         </LinearLayout>
 
     </RelativeLayout>
+     <LinearLayout
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:orientation="vertical"
+         android:layout_gravity="bottom">
+     <LinearLayout
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_gravity="bottom"
+         android:id="@+id/driverInfo"
+         android:orientation="horizontal"
+         android:background="@android:color/white">
+     <LinearLayout
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:orientation="vertical"
+         android:paddingLeft="40sp"/>
+     <TextView
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:id="@+id/driverName"
+         android:paddingBottom="10sp"
+         android:paddingTop="20sp"/>
+     <TextView
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:id="@+id/driverPhone"
+         android:paddingBottom="10sp"
+         android:paddingTop="20sp"/>
+     <TextView
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:id="@+id/driverCar"
+         android:paddingBottom="10sp"
+         android:paddingTop="20sp"/>
+     </LinearLayout>
+     </LinearLayout>
 
-
-    <Button
+     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="call Uber"

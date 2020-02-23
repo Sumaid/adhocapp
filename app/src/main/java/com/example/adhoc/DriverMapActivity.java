@@ -55,7 +55,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     Location mLastLocation;
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
-    Button mLogout;
+    Button mLogout, mSettings;
     String customerId = "";
     String rideId = "";
 
@@ -81,6 +81,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
 
         mLogout = findViewById(R.id.logout);
+        mSettings = findViewById(R.id.settings);
         mLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -93,6 +94,15 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
             }
         });
 
+        mSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(DriverMapActivity.this, DriverSettingsActivity.class);
+                startActivity(intent);
+                finish();
+                return;
+            }
+        });
         getAssignedCustomer();
 
     }
