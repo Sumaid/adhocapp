@@ -261,7 +261,10 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                     mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
 
 
-                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                    if(currentUser == null) return;
+
+                    String userId = currentUser.getUid();
                     DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("driversAvailable");
                     DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("driversWorking");
                     GeoFire geoFireAvailable = new GeoFire(refAvailable);
