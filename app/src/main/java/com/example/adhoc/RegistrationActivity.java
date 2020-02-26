@@ -23,10 +23,13 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class RegistrationActivity extends AppCompatActivity {
     private EditText mEmail, mPassword;
     private Button mSubmit;
-    private RadioGroup radioGroup;
+    private RadioGroup radioGroup, radioGroup2;
     private String selectedOption;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener firebaseAuthListener;
@@ -47,11 +50,25 @@ public class RegistrationActivity extends AppCompatActivity {
             }
         };
 
-        mEmail = (EditText) findViewById(R.id.email);
-        mPassword = (EditText) findViewById(R.id.password);
-        radioGroup = (RadioGroup) findViewById(R.id.groupradio);
-        mSubmit = (Button) findViewById(R.id.submit);
+        mEmail = findViewById(R.id.email);
+        mPassword = findViewById(R.id.password);
+        radioGroup = findViewById(R.id.groupradio);
+        mSubmit = findViewById(R.id.submit);
+        radioGroup2 = findViewById(R.id.radioGroup);
 
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                int selectedId = radioGroup.getCheckedRadioButtonId();
+                final RadioButton radioButton
+                        = radioGroup.findViewById(selectedId);
+                String selectedOption = (String) radioButton.getText();
+                if(selectedOption.equals("Driver"))
+                    radioGroup2.setVisibility(View.VISIBLE);
+                if(selectedOption.equals("Customer"))
+                    radioGroup2.setVisibility(View.GONE);
+            }
+        });
         mSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -69,10 +86,20 @@ public class RegistrationActivity extends AppCompatActivity {
                             .show();
                 }
                 else {
-                    final RadioButton radioButton
-                            = (RadioButton)radioGroup
-                            .findViewById(selectedId);
+                    final RadioButton radioButton = radioGroup.findViewById(selectedId);
                     selectedOption = (String) radioButton.getText();
+
+
+                    RadioButton radioButton2;
+                    int selectedId2;
+                    String serviceType = "";
+                    if(selectedOption.equals("Driver")) {
+                        selectedId2 = radioGroup2.getCheckedRadioButtonId();
+                        radioButton2 = radioGroup2.findViewById(selectedId2);
+                        selectedOption = (String) radioButton2.getText();
+                        serviceType = selectedOption.toString();
+                    }
+                    final String cabType = serviceType;
                     mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(RegistrationActivity.this, new OnCompleteListener<AuthResult>() {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
@@ -89,6 +116,14 @@ public class RegistrationActivity extends AppCompatActivity {
                                 else{
                                     Toast.makeText(RegistrationActivity.this, "Non Equalizer", Toast.LENGTH_SHORT).show();
                                     current_user_db.child("Drivers").child(user_id).setValue(true);
+
+                                    DatabaseReference mDriverDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(user_id);
+                                    Map userInfo = new HashMap();
+                                    userInfo.put("name", "");
+                                    userInfo.put("phone", "");
+                                    userInfo.put("car", "");
+                                    userInfo.put("service", cabType);
+                                    mDriverDatabase.updateChildren(userInfo);
                                 }
                             }
                         }
