@@ -8,6 +8,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,6 +47,9 @@ public class CustomerActivity extends AppCompatActivity {
 
     private LinearLayout mDriverInfo;
     private TextView mDriverName, mDriverPhone, mDriverCar;
+    private RadioGroup mRadioGroup;
+    private String requestService;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +60,9 @@ public class CustomerActivity extends AppCompatActivity {
         mDriverName = findViewById(R.id.driverName);
         mDriverPhone = findViewById(R.id.driverPhone);
         mDriverCar = findViewById(R.id.driverCar);
+
+        mRadioGroup = findViewById(R.id.radioGroup);
+        mRadioGroup.check(R.id.small);
 
         mLogout = findViewById(R.id.logout);
         mRequest = findViewById(R.id.request);
@@ -91,6 +99,15 @@ public class CustomerActivity extends AppCompatActivity {
 
                             }
                         });
+                int selectedId = mRadioGroup.getCheckedRadioButtonId();
+                final RadioButton radioButton = findViewById(selectedId);
+
+                if (radioButton.getText() == null) {
+                    return;
+                }
+
+                requestService = radioButton.getText().toString();
+
                 GeoFire geofire = new GeoFire(ref);
                 rideId = userid+size;
                 geofire.setLocation(userid+size, new GeoLocation(destination.latitude, destination.longitude), new GeoFire.CompletionListener() {
@@ -144,19 +161,39 @@ public class CustomerActivity extends AppCompatActivity {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
                 if (!driverFound){
-                    driverFound = true;
-                    driverFoundID = key;
+                    DatabaseReference mCustomerDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(key);
+                    mCustomerDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if(dataSnapshot.exists() && dataSnapshot.getChildrenCount() > 0){
+                                Map<String, Object> driverMap = (Map <String, Object>)dataSnapshot.getValue();
+                                if (driverFound){
+                                    return;
+                                }
 
-                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverFoundID).child("customerRideId");
-                    String customerId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    HashMap map = new HashMap();
-                    map.put("customerId", customerId);
-                    map.put("rideId", rideId);
-                    driverRef.updateChildren(map);
-                    radius = 1;
+                                if(driverMap.get("service").equals(requestService) ){
+                                    driverFound = true;
+                                    driverFoundID = dataSnapshot.getKey();
 
-                    getDriverInfo();
-                    mRequest.setText("Found Driver!");
+                                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverFoundID).child("customerRideId");
+                                    String customerId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                                    HashMap map = new HashMap();
+                                    map.put("customerId", customerId);
+                                    map.put("rideId", rideId);
+                                    driverRef.updateChildren(map);
+                                    radius = 1;
+
+                                    getDriverInfo();
+                                    mRequest.setText("Found Driver!");
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
 
                 }
             }
