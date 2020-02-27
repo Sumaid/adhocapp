@@ -265,7 +265,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
-        mGoogleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        //mGoogleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
 
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(1000); // two minute interval
@@ -430,6 +430,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private void getRouteToMarker(LatLng pickupLatLng) {
         if (pickupLatLng != null && mLastLocation != null){
             Routing routing = new Routing.Builder()
+                    .key("AIzaSyC1S7BUHYryWvinNdNtu1s7mn-d1IMgXP0")
                     .travelMode(AbstractRouting.TravelMode.DRIVING)
                     .withListener(this)
                     .alternativeRoutes(false)
@@ -441,6 +442,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private static final int[] COLORS = new int[]{R.color.primary_dark_material_light};
     @Override
     public void onRoutingFailure(RouteException e) {
+        Toast.makeText(this, "Routing Failed ", Toast.LENGTH_LONG).show();
         if(e != null) {
             Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }else {
