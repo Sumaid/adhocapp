@@ -12,7 +12,6 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +21,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import com.directions.route.AbstractRouting;
+import com.directions.route.Route;
+import com.directions.route.RouteException;
+import com.directions.route.Routing;
+import com.directions.route.RoutingListener;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -37,6 +41,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -45,10 +51,11 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class DriverMapActivity extends FragmentActivity implements OnMapReadyCallback {
+public class DriverMapActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
     GoogleMap mGoogleMap;
     SupportMapFragment mapFrag;
     LocationRequest mLocationRequest;
@@ -58,6 +65,12 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     Button mLogout, mSettings;
     String customerId = "";
     String rideId = "";
+    Marker pickupMarker;
+
+    private List<Polyline> polylines = new ArrayList<>();
+
+    private ValueEventListener assignedCustomerPickupLocationRefListener;
+    private DatabaseReference assignedCustomerPickupLocationRef;
 
     private LinearLayout mCustomerInfo;
     private TextView mCustomerName, mCustomerPhone;
@@ -85,6 +98,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         mLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                endRide();
                 disconnectDriver();
                 FirebaseAuth.getInstance().signOut();
                 Intent intent = new Intent(DriverMapActivity.this, MainActivity.class);
@@ -120,9 +134,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                     getAssignedCustomerPickupLocation();
                     getAssignedCustomerInfo();
                 }else{
-                    mCustomerInfo.setVisibility(View.GONE);
-                    mCustomerName.setText("");
-                    mCustomerPhone.setText("");
+                    endRide();
                 }
             }
 
@@ -132,9 +144,47 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         });
     }
 
+    private void endRide(){
+        erasePolylines();
+
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(userId).child("customerRideId");
+        driverRef.removeValue();
+
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference("customerRequest").child(customerId).child(rideId);
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (snapshot.getValue() == null || rideId == "") {
+                    // The child doesn't exist
+                }
+                else {
+                    GeoFire geoFire = new GeoFire(ref);
+                    geoFire.removeLocation(rideId);
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+            }
+        });
+
+        customerId="";
+        rideId="";
+
+        if(pickupMarker != null){
+            pickupMarker.remove();
+        }
+        if (assignedCustomerPickupLocationRefListener != null){
+            assignedCustomerPickupLocationRef.removeEventListener(assignedCustomerPickupLocationRefListener);
+        }
+        mCustomerInfo.setVisibility(View.GONE);
+        mCustomerName.setText("");
+        mCustomerPhone.setText("");
+    }
+
     private void getAssignedCustomerPickupLocation(){
-        DatabaseReference assignedCustomerPickupLocationRef = FirebaseDatabase.getInstance().getReference().child("customerRequest").child(customerId).child(rideId).child("l");
-        assignedCustomerPickupLocationRef.addValueEventListener(new ValueEventListener() {
+        assignedCustomerPickupLocationRef = FirebaseDatabase.getInstance().getReference().child("customerRequest").child(customerId).child(rideId).child("l");
+        assignedCustomerPickupLocationRefListener = assignedCustomerPickupLocationRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
@@ -147,8 +197,9 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                     if(map.get(1) != null){
                         locationLng = Double.parseDouble(map.get(1).toString());
                     }
-                    LatLng driverLatLng = new LatLng(locationLat,locationLng);
-                    mGoogleMap.addMarker(new MarkerOptions().position(driverLatLng).title("Pickup Location"));
+                    LatLng pickupLatLng = new LatLng(locationLat,locationLng);
+                    pickupMarker = mGoogleMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pickup Location"));
+                    getRouteToMarker(pickupLatLng);
                 }
             }
 
@@ -374,5 +425,64 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
             // other 'case' lines to check for other
             // permissions this app might request
         }
+    }
+
+    private void getRouteToMarker(LatLng pickupLatLng) {
+        if (pickupLatLng != null && mLastLocation != null){
+            Routing routing = new Routing.Builder()
+                    .travelMode(AbstractRouting.TravelMode.DRIVING)
+                    .withListener(this)
+                    .alternativeRoutes(false)
+                    .waypoints(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), pickupLatLng)
+                    .build();
+            routing.execute();
+        }
+    }
+    private static final int[] COLORS = new int[]{R.color.primary_dark_material_light};
+    @Override
+    public void onRoutingFailure(RouteException e) {
+        if(e != null) {
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }else {
+            Toast.makeText(this, "Something went wrong, Try again", Toast.LENGTH_SHORT).show();
+        }
+    }
+    @Override
+    public void onRoutingStart() {
+    }
+    @Override
+    public void onRoutingSuccess(ArrayList<Route> route, int shortestRouteIndex) {
+        if(polylines.size()>0) {
+            for (Polyline poly : polylines) {
+                poly.remove();
+            }
+        }
+
+        polylines = new ArrayList<>();
+        //add route(s) to the map.
+        for (int i = 0; i <route.size(); i++) {
+
+            //In case of more than 5 alternative routes
+            int colorIndex = i % COLORS.length;
+
+            PolylineOptions polyOptions = new PolylineOptions();
+            polyOptions.color(getResources().getColor(COLORS[colorIndex]));
+            polyOptions.width(10 + i * 3);
+            polyOptions.addAll(route.get(i).getPoints());
+            Polyline polyline = mGoogleMap.addPolyline(polyOptions);
+            polylines.add(polyline);
+
+            Toast.makeText(getApplicationContext(),"Route "+ (i+1) +": distance - "+ route.get(i).getDistanceValue()+": duration - "+ route.get(i).getDurationValue(),Toast.LENGTH_SHORT).show();
+        }
+
+    }
+    @Override
+    public void onRoutingCancelled() {
+    }
+    private void erasePolylines(){
+        for(Polyline line : polylines){
+            line.remove();
+        }
+        polylines.clear();
     }
 }
